@@ -1,12 +1,12 @@
 import os
 import sys
 import numpy as np
-import pandas as pd
+# import pandas as pd
 from matplotlib import pyplot as plt
 
 import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, Dropout, Input, Flatten
+# from tensorflow.keras.models import Model
+# from tensorflow.keras.layers import Dense, Dropout, Input, Flatten
 import tensorflow_probability as tfp
 tfd = tfp.distributions
 
@@ -69,27 +69,27 @@ class GFNAgent():
         :return: (None)
         """
         # Accept one-hot encoded states as input
-        input_ = Input(shape=(self.dim,self.env_len), name='input')
-        flatten_1 = Flatten()(input_)
-        dense_1 = Dense(
+        input_ = tf.keras.layers.Input(shape=(self.dim,self.env_len), name='input')
+        flatten_1 = tf.keras.layers.Flatten()(input_)
+        dense_1 = tf.keras.layers.Dense(
             units=self.n_hidden,
             activation='relu',
             kernel_regularizer='l2',
             name='dense_1'
         )(flatten_1)
-        dense_2 = Dense(
+        dense_2 = tf.keras.layers.Dense(
             units=self.n_hidden,
             activation='relu',
             kernel_regularizer='l2',
             name='dense_2'
         )(dense_1)
         # Output log probabilities using log_softmax activation
-        fpm = Dense(units=self.action_space, activation='log_softmax', name='forward_policy')(dense_2)
-        bpm = Dense(units=self.dim, activation='log_softmax', name='backward_policy')(dense_2)
+        fpm = tf.keras.layers.Dense(units=self.action_space, activation='log_softmax', name='forward_policy')(dense_2)
+        bpm = tf.keras.layers.Dense(units=self.dim, activation='log_softmax', name='backward_policy')(dense_2)
         # Z0 is a single learned value
         self.z0 = tf.Variable(0., name='z0', trainable=True)
         # Model output will be a list of tensors for both forward and backward
-        self.model = Model(input_, [fpm, bpm])
+        self.model = tf.keras.models.Model(input_, [fpm, bpm])
         # We'll be using the uniform distribution to add
         # more exploration to our forward policy
         self.unif = tfd.Uniform(low=[0]*self.action_space, high=[1]*self.action_space)
