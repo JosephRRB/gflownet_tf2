@@ -408,7 +408,7 @@ class GFNAgent():
         self.model.load_weights(model_weights_path)
 
 
-    def compare_env_to_model_policy(self, sample_size=2000, plot=True):
+    def compare_env_to_model_policy(self, sample_size=2000, plot_filename=None):
         """Compare probability distribution over generated trajectories
         (estimated empirically) to reward distribution in environment.
         Compare using L1 error.
@@ -421,6 +421,8 @@ class GFNAgent():
         self.clear_eval_data()
         self.sample(sample_size, explore=False, evaluate=True)
         env_prob = self.env.env_prob
+        mode_value = env_prob.max()
+        # inds_of_modes = np.where(env_prob == mode_value)
         agent_prob = np.zeros(env_prob.shape)
         # Count number of trajectories that end in each position,
         # and normalize by the total
@@ -429,12 +431,18 @@ class GFNAgent():
             agent_prob[tuple(last_position)] += 1
         agent_prob = agent_prob / np.sum(agent_prob)
 
-        if plot:
+        if plot_filename:
             top_slice = tuple([slice(0,self.env_len),slice(0,self.env_len)] + [0]*(self.dim - 2))
-            plt.imshow(agent_prob[top_slice], origin='lower');
-        
-        l1_error = np.sum(np.abs(agent_prob - env_prob))
-        return l1_error
+            # plt.imshow(agent_prob[top_slice], origin='lower');
+            plt.imsave(plot_filename, agent_prob[top_slice])
+
+        # mode_frac_errors = np.abs(agent_prob[inds_of_modes] - mode_value)/mode_value
+        # return mode_frac_errors
+        l1_errors = np.abs(agent_prob - env_prob)
+        max_frac_error = np.max(l1_errors) / mode_value
+        min_frac_error = np.min(l1_errors) / mode_value
+        ave_frac_error = np.mean(l1_errors) / mode_value
+        return ave_frac_error, max_frac_error, min_frac_error
 
 
     def count_modes(self):
