@@ -421,8 +421,6 @@ class GFNAgent():
         self.clear_eval_data()
         self.sample(sample_size, explore=False, evaluate=True)
         env_prob = self.env.env_prob
-        mode_value = env_prob.max()
-        # inds_of_modes = np.where(env_prob == mode_value)
         agent_prob = np.zeros(env_prob.shape)
         # Count number of trajectories that end in each position,
         # and normalize by the total
@@ -436,14 +434,8 @@ class GFNAgent():
             # plt.imshow(agent_prob[top_slice], origin='lower');
             plt.imsave(plot_filename, agent_prob[top_slice])
 
-        # mode_frac_errors = np.abs(agent_prob[inds_of_modes] - mode_value)/mode_value
-        # return mode_frac_errors
-        l1_errors = np.abs(agent_prob - env_prob)
-        max_frac_error = np.max(l1_errors) / mode_value
-        min_frac_error = np.min(l1_errors) / mode_value
-        ave_frac_error = np.mean(l1_errors) / mode_value
-        return ave_frac_error, max_frac_error, min_frac_error
-
+        # l1_errors = np.abs(agent_prob - env_prob)
+        return agent_prob, env_prob
 
     def count_modes(self):
         """Count the number of modes sampled in `self.data`. Modes being
@@ -544,3 +536,35 @@ class GFNAgent():
             s=self.data['rewards']*50
         )
         plt.show()
+
+
+def _plot_l1_errors_per_probability_interval(agent_prob, env_prob, filename, n_intervals=20):
+    result = agent_prob.ravel()
+    expected = env_prob.ravel()
+    max_expected = expected.max()
+    assert max_expected != 0
+    expected_pcts = expected * 100 / max_expected
+
+    interval_edges = np.linspace(0, 100, n_intervals + 1)
+    starts = interval_edges[:-1]
+    ends = interval_edges[1:]
+
+    l1_errors = np.abs(result - expected)
+    errors = []
+    labels = []
+    for s, e in zip(starts, ends):
+        inds = np.where((s < expected_pcts) & (expected_pcts <= e))
+        errors_per_interval = l1_errors[inds]
+        if len(errors_per_interval):
+            interval_label = f"{s:.2f}% < pct <= {e:.2f}%"
+            errors.append(errors_per_interval)
+            labels.append(interval_label)
+
+    print(errors)
+    fig, ax = plt.subplots()
+    ax.violinplot(errors)
+    ax.set_xticks(np.arange(1, len(labels) + 1), labels=labels, rotation=15)
+    ax.set_ylabel("L1 Errors")
+    ax.set_xlabel("Percentage of max theoretical probability")
+    plt.tight_layout()
+    fig.savefig(f"./plot_results/{filename}")
