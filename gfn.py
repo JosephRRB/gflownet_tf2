@@ -549,12 +549,12 @@ def _plot_l1_errors_per_probability_interval(agent_prob, env_prob, filename, n_i
     starts = interval_edges[:-1]
     ends = interval_edges[1:]
 
-    l1_errors = np.abs(result - expected)
+    frac_l1_errors = np.abs(result - expected) / max_expected
     errors = []
     labels = []
     for s, e in zip(starts, ends):
         inds = np.where((s < expected_pcts) & (expected_pcts <= e))
-        errors_per_interval = l1_errors[inds]
+        errors_per_interval = frac_l1_errors[inds]
         if len(errors_per_interval):
             interval_label = f"{s:.2f}% < pct <= {e:.2f}%"
             errors.append(errors_per_interval)
@@ -564,7 +564,7 @@ def _plot_l1_errors_per_probability_interval(agent_prob, env_prob, filename, n_i
     fig, ax = plt.subplots()
     ax.violinplot(errors)
     ax.set_xticks(np.arange(1, len(labels) + 1), labels=labels, rotation=15)
-    ax.set_ylabel("L1 Errors")
+    ax.set_ylabel("Fractional L1 Errors")
     ax.set_xlabel("Percentage of max theoretical probability")
     plt.tight_layout()
     fig.savefig(f"./plot_results/{filename}")
