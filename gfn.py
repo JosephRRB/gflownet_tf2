@@ -191,7 +191,7 @@ class GFNAgent():
         positions = [one_hot_position]
         actions = [tf.one_hot(self.action_space-1, self.action_space).numpy()]
         still_tracing = True
-        if np.all(position == [0,0]):
+        if np.all(position == [0]*self.dim):
             still_tracing = False
         cur_pos = position.copy()
         while still_tracing:
@@ -208,7 +208,7 @@ class GFNAgent():
             # Convert position to one-hot encoding
             one_hot_position = tf.one_hot(np.expand_dims(cur_pos, 0), self.env_len, axis=-1)
             # Stop tracing if at origin
-            if np.all(cur_pos == [0,0]):
+            if np.all(cur_pos == [0]*self.dim):
                 still_tracing = False
 
             positions.append(one_hot_position.numpy().copy())
@@ -564,7 +564,9 @@ def _plot_l1_errors_per_probability_interval(agent_prob, env_prob, filename, n_i
     fig, ax = plt.subplots()
     ax.violinplot(errors)
     ax.set_xticks(np.arange(1, len(labels) + 1), labels=labels, rotation=15)
+    ax.set_ylim(0, 1.5)
     ax.set_ylabel("Fractional L1 Errors")
     ax.set_xlabel("Percentage of max theoretical probability")
     plt.tight_layout()
     fig.savefig(f"./plot_results/{filename}")
+    return errors
